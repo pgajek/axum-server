@@ -1,4 +1,5 @@
 use axum::{
+    extract::ConnectInfo,
     http::Request,
     middleware::{self, Next},
     routing::get,
@@ -25,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Listening on https://{}", addr);
 
     axum_server::bind_rustls(addr, config)
-        .serve(app.into_make_service())
+        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .expect("Server failed");
 
@@ -33,10 +34,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn log_requests(
+    ConnectInfo(client_addr): ConnectInfo<SocketAddr>,
     req: Request<axum::body::Body>,
     next: Next,
 ) -> impl axum::response::IntoResponse {
-    info!("Received request: {} {}", req.method(), req.uri());
+    info!("NEW REQUEST");
+    info!(
+        "Received request: {} {} from {}",
+        req.method(),
+        req.uri(),
+        client_addr
+    );
     next.run(req).await
 }
 
