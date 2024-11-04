@@ -1,45 +1,26 @@
-use axum::{
-    extract::{Path, Query},
-    response::IntoResponse,
-    routing::{get, post},
-    Json, Router,
-};
-use serde::{Deserialize, Serialize};
+use axum::{routing::get, Router};
+use axum_server::tls_rustls::RustlsConfig;
 use std::net::SocketAddr;
-use tokio;
 
 #[tokio::main]
-async fn main() {
-    let app = Router::new()
-        .route("/", get(root))
-        .route("/json", post(handle_json));
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config = RustlsConfig::from_pem_file("cert.pem", "key.pem")
+        .await
+        .expect("Failed to load TLS configuration");
+
+    let app = Router::new().route("/", get(root));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8123));
-    println!("Listening on {:?}", addr);
+    println!("Listening on https://{}", addr);
 
-    axum::Server::bind(&addr)
+    axum_server::bind_rustls(addr, config)
         .serve(app.into_make_service())
         .await
-        .unwrap();
+        .expect("Server failed");
+
+    Ok(())
 }
 
 async fn root() -> &'static str {
-    "Welcome to the Axum server!"
-}
-
-#[derive(Deserialize)]
-struct InputData {
-    message: String,
-}
-
-#[derive(Serialize)]
-struct OutputData {
-    response: String,
-}
-
-async fn handle_json(Json(payload): Json<InputData>) -> impl IntoResponse {
-    let response = OutputData {
-        response: format!("You sent: {}", payload.message),
-    };
-    Json(response)
+    "Welcome to the secure Axum server!"
 }
