@@ -2,3 +2,6 @@
 cert.pem
 key.pem
 Cargo.lock
+swapi_dev.crt
+swapi_dev.csr
+swapi_dev.key

@@ -14,12 +14,12 @@ use tracing_subscriber;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
-    let config = RustlsConfig::from_pem_file("cert.pem", "key.pem")
+    let config = RustlsConfig::from_pem_file("swapi_dev.crt", "swapi_dev.key")
         .await
         .expect("Failed to load TLS configuration");
 
     let app = Router::new()
-        .route("/", get(root))
+        .route("/*path", get(root))
         .layer(middleware::from_fn(log_requests));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8123));
